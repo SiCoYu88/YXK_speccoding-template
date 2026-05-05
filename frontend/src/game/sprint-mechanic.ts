@@ -53,6 +53,11 @@ export class SprintMechanic {
     return this.currentState === 'active';
   }
 
+  /** 是否处于冲刺预警（即将开始）状态 */
+  isApproaching(): boolean {
+    return this.currentState === 'warning';
+  }
+
   /** 注册事件回调 */
   onEvent(callback: SprintEventCallback): void {
     this.callbacks.push(callback);

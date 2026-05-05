@@ -25,7 +25,7 @@ export interface TimelineIndex {
  * 加载并解析曲目节拍数据
  */
 export async function loadTrackData(trackId: string): Promise<TrackData> {
-  const url = `/assets/music/${trackId}.track.json`;
+  const url = `/music/${trackId}.track.json`;
   const response = await fetch(url);
 
   if (!response.ok) {

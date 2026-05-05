@@ -125,7 +125,7 @@ export async function loadAvailableTracks(): Promise<TrackInfo[]> {
 
   for (const id of trackIds) {
     try {
-      const response = await fetch(`/assets/music/${id}.track.json`);
+      const response = await fetch(`/music/${id}.track.json`);
       if (response.ok) {
         const data: TrackData = await response.json();
         tracks.push(extractTrackInfo(data));

@@ -7,6 +7,8 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, '../shared'),
     },
   },
+  // 将根目录的 assets/ 作为静态资源目录，前端可以通过 /assets/... 访问
+  publicDir: path.resolve(__dirname, '../assets'),
   server: {
     port: 5173,
     proxy: {
