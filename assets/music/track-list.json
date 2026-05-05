@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "tracks": [
+    {
+      "id": "ocean-pulse",
+      "title": "Ocean Pulse",
+      "artist": "Rhythm Swimming OST",
+      "bpm": 128,
+      "duration": 120000,
+      "difficulty": 5,
+      "audioFile": "ocean-pulse.wav",
+      "trackFile": "ocean-pulse.track.json",
+      "description": "温和的海洋节拍，适合初学者熟悉操作",
+      "tags": ["入门", "中速", "海洋"]
+    },
+    {
+      "id": "neon-wave",
+      "title": "Neon Wave",
+      "artist": "Rhythm Swimming OST",
+      "bpm": 140,
+      "duration": 90000,
+      "difficulty": 7,
+      "audioFile": "neon-wave.wav",
+      "trackFile": "neon-wave.track.json",
+      "description": "快节奏霓虹风格，三段冲刺挑战你的极限",
+      "tags": ["进阶", "快速", "霓虹"]
+    }
+  ]
+}
