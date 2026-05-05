@@ -2,6 +2,10 @@
  * 音画同步校正模块
  * 确保音乐播放与音符显示之间的同步误差不超过 ±5ms
  * 如果检测到偏移，自动校正
+ *
+ * 支持两种模式：
+ * 1. 有音频文件：加载 audioBuffer 并播放，以 AudioContext 时钟为准
+ * 2. 无音频文件（合成音频模式）：以 performance.now() 时钟驱动游戏时间
  */
 
 const MAX_SYNC_ERROR_MS = 5;
@@ -28,8 +32,17 @@ export class AudioSync {
   /** 是否正在播放 */
   private playing: boolean = false;
 
+  /** 是否使用 performance.now() 纯计时模式（无音频文件时） */
+  private timerOnlyMode: boolean = false;
+
   constructor() {
-    this.audioContext = new AudioContext();
+    try {
+      this.audioContext = new AudioContext();
+    } catch {
+      // 如果 AudioContext 不可用，使用纯计时模式
+      this.audioContext = null;
+      this.timerOnlyMode = true;
+    }
   }
 
   /**
@@ -43,6 +56,7 @@ export class AudioSync {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.timerOnlyMode = false;
   }
 
   /**
@@ -50,8 +64,15 @@ export class AudioSync {
    * @param gameTime 当前游戏时间（用于 resume 场景）
    */
   play(gameTime: number = 0): void {
-    if (!this.audioContext || !this.audioBuffer) {
-      console.warn('[AudioSync] Cannot play: audio not loaded');
+    // 记录游戏时间轴锚点（无论有无音频文件都需要）
+    this.gameStartTime = performance.now() - gameTime;
+    this.correctionOffset = 0;
+    this.playing = true;
+
+    // 如果没有音频缓冲区，使用纯计时模式
+    if (!this.audioBuffer || !this.audioContext) {
+      this.timerOnlyMode = true;
+      console.log('[AudioSync] No audio buffer loaded, running in timer-only mode');
       return;
     }
 
@@ -65,24 +86,24 @@ export class AudioSync {
     this.sourceNode.buffer = this.audioBuffer;
     this.sourceNode.connect(this.audioContext.destination);
 
-    // 记录同步锚点
-    this.gameStartTime = performance.now() - gameTime;
+    // 记录音频同步锚点
     this.audioStartContextTime = this.audioContext.currentTime;
-    this.correctionOffset = 0;
 
     // 如果是从中间开始（断线重连等场景）
     const offsetSeconds = gameTime / 1000;
     this.sourceNode.start(0, offsetSeconds);
-    this.playing = true;
+    this.timerOnlyMode = false;
   }
 
   /**
    * 暂停
    */
   pause(): void {
-    if (this.sourceNode && this.playing) {
-      this.sourceNode.stop();
-      this.sourceNode = null;
+    if (this.playing) {
+      if (this.sourceNode) {
+        this.sourceNode.stop();
+        this.sourceNode = null;
+      }
       this.playing = false;
     }
   }
@@ -101,6 +122,10 @@ export class AudioSync {
    * 获取音频实际播放位置（ms）
    */
   getAudioTime(): number {
+    if (this.timerOnlyMode) {
+      // 纯计时模式：无音频可对比，返回游戏时间本身
+      return this.getCurrentTime();
+    }
     if (!this.audioContext || !this.playing) return 0;
     const elapsed = this.audioContext.currentTime - this.audioStartContextTime;
     return elapsed * 1000;
@@ -112,6 +137,12 @@ export class AudioSync {
    */
   checkSync(): number {
     if (!this.playing) return 0;
+
+    // 纯计时模式下无需校正
+    if (this.timerOnlyMode) {
+      this.currentSyncError = 0;
+      return 0;
+    }
 
     const gameTime = this.getCurrentTime();
     const audioTime = this.getAudioTime();
@@ -137,6 +168,11 @@ export class AudioSync {
   /** 是否正在播放 */
   isPlaying(): boolean {
     return this.playing;
+  }
+
+  /** 是否处于纯计时模式 */
+  isTimerOnlyMode(): boolean {
+    return this.timerOnlyMode;
   }
 
   /** 获取音频总时长（ms） */
